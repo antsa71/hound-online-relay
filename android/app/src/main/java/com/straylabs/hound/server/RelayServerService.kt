@@ -42,11 +42,11 @@ class RelayServerService : Service() {
 
     private suspend fun serve(api: RelayApi, root: File) {
         val registration = api.registerServer(DEVICE_ID)
-        updateNotification(if (registration.isSuccess) "Online relay connected" else "Relay connection failed: ${registration.exceptionOrNull()?.message ?: "check Worker URL/token"}")
+        updateNotification(if (registration.isSuccess) "Connected" else "Disconnected: ${registration.exceptionOrNull()?.message ?: "check Worker URL/token"}")
         while (scope.isActive) {
             val manifestResult = try { publishManifest(api, root) } catch (e: Exception) { Result.failure(e) }
             if (manifestResult.isFailure) {
-                updateNotification("Relay unavailable: ${manifestResult.exceptionOrNull()?.message ?: "check Internet/Worker"}")
+                updateNotification("Disconnected: ${manifestResult.exceptionOrNull()?.message ?: "check Internet/Worker"}")
                 delay(5000)
                 continue
             }
@@ -54,9 +54,9 @@ class RelayServerService : Service() {
                 if (command != null) {
                     updateNotification("Sending requested file: ${command.optString("path")}")
                     streamSelectedFile(api, root, command.optString("id"), command.optString("path"))
-                    updateNotification("Online relay connected")
-                } else updateNotification("Online relay connected • waiting for Client")
-            }.onFailure { e -> updateNotification("Relay connection failed: ${e.message ?: "unknown error"}") }
+                    updateNotification("Connected")
+                } else updateNotification("waiting")
+            }.onFailure { e -> updateNotification("Disconnected: ${e.message ?: "unknown error"}") }
             delay(2500)
         }
     }
@@ -102,7 +102,7 @@ class RelayServerService : Service() {
         api.finishDownload(id)
     }
 
-    private fun notification(message: String = "Secure relay is starting"): Notification {
+    private fun notification(message: String = "Connecting"): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "Hound relay", NotificationManager.IMPORTANCE_LOW)
@@ -110,7 +110,7 @@ class RelayServerService : Service() {
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Hound server online")
+            .setContentTitle("ConvertA online")
             .setContentText(message)
             .setOngoing(true)
             .build()

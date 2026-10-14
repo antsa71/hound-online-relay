@@ -55,9 +55,9 @@ class NotificationHelper(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_SERVER)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Server Running")
+            .setContentTitle("ConvertA online")
             .setContentText("http://${url}:${port}")
-            .setStyle(NotificationCompat.BigTextStyle().bigText("Server running at http://${url}:${port}"))
+            .setStyle(NotificationCompat.BigTextStyle().bigText("ConvertA online at http://${url}:${port}"))
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

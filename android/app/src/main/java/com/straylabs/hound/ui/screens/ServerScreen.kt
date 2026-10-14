@@ -40,7 +40,7 @@ fun ServerScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = if (serverRunning) "Server automatique actif" else "Server automatique",
+            text = if (serverRunning) "ConvertA automatique actif" else "ConvertA automatique",
             style = MaterialTheme.typography.titleMedium
         )
         Text(

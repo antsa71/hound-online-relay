@@ -84,6 +84,7 @@ fun ClientScreen(
     var uploadingFile by remember { mutableStateOf<String?>(null) }
     val pathHistory = remember { mutableStateListOf<String>() }
     var previewItem by remember { mutableStateOf<FileItem?>(null) }
+    var relayConnected by remember { mutableStateOf(false) }
 
     var showAuthDialog by remember { mutableStateOf(false) }
     var authUsername by remember { mutableStateOf(savedCredentials?.first ?: "") }
@@ -115,7 +116,12 @@ fun ClientScreen(
         scope.launch {
             isLoading = true
             error = null
-            val relay = relayApi
+            val relay = relayApi ?: if (BuildConfig.RELAY_URL.isNotBlank()) {
+                relayConnected = false
+                error = "Disconnected"
+                isLoading = false
+                return@launch
+            } else null
             if (relay != null) {
                 relay.manifest().map { manifest ->
                     val all = manifest.optJSONArray("items") ?: org.json.JSONArray()
@@ -128,11 +134,20 @@ fun ClientScreen(
                         if (rest.contains('/')) return@mapNotNull null
                         FileItem(item.optString("name", rest), item.optLong("size", 0L), item.optBoolean("isDirectory"), item.optLong("modified", 0L), itemPath)
                     }
-                }.onSuccess { files = it }
-                    .onFailure { error = it.message ?: "Relay unavailable" }
+                }.onSuccess {
+                    relayConnected = true
+                    files = it
+                }.onFailure {
+                    relayConnected = false
+                    error = it.message ?: "Relay unavailable"
+                }
             } else httpClient.listFiles(baseUrl, path)
-                .onSuccess { files = it }
+                .onSuccess {
+                    relayConnected = true
+                    files = it
+                }
                 .onFailure { e ->
+                    relayConnected = false
                     if (e is AuthRequiredException) showAuthDialog = true
                     else {
                         error = e.message ?: "Unknown error"
@@ -680,6 +695,26 @@ fun ClientScreen(
                 )
             }
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (relayConnected) ConnectedFg else DisconnectedFg)
+                )
+                Text(
+                    text = if (relayConnected) "Connected" else "Disconnected",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (relayConnected) ConnectedFg else DisconnectedFg
+                )
+            }
+
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
 
             // ── Breadcrumb row (only when connected) ──────────────────────────
@@ -827,7 +862,13 @@ fun ClientScreen(
 
                     else -> {
                         LazyColumn {
-                            items(files, key = { it.path }) { item ->
+                            items(
+                                files.sortedWith(
+                                    compareByDescending<FileItem> { it.isDirectory }
+                                        .thenBy { it.name.lowercase() }
+                                ),
+                                key = { it.path }
+                            ) { item ->
                                 FileListItem(
                                     item = item,
                                     canDownload = downloadFolder != null && !item.isDirectory,
