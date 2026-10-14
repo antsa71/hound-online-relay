@@ -182,14 +182,20 @@ fun ClientScreen(
         }
     }
 
-    // Ask the fixed Worker for the current Quick Tunnel URL on startup.
-    LaunchedEffect(Unit) {
-        if (BuildConfig.RELAY_URL.isNotBlank() && pairingToken.isBlank() && BuildConfig.PAIRING_TOKEN.isBlank()) showPairingDialog = true
-        else if (relayApi != null) {
+    // Connect only after the relay API has been initialized. This avoids a
+    // startup race where the one-shot effect ran before the compiled/saved
+    // pairing token was converted into RelayApi.
+    LaunchedEffect(BuildConfig.RELAY_URL, pairingToken, relayApi, discoveryClient.enabled) {
+        if (BuildConfig.RELAY_URL.isNotBlank() && pairingToken.isBlank() && BuildConfig.PAIRING_TOKEN.isBlank()) {
+            showPairingDialog = true
+        } else if (relayApi != null && connectedUrl != BuildConfig.RELAY_URL) {
             connectedUrl = BuildConfig.RELAY_URL
             loadFiles(BuildConfig.RELAY_URL, "")
-        } else if (discoveryClient.enabled) discoverAndConnect()
-        else error = "Discovery is not configured. Add houndDiscovery* to gradle.properties."
+        } else if (relayApi == null && BuildConfig.RELAY_URL.isBlank() && discoveryClient.enabled && connectedUrl == null) {
+            discoverAndConnect()
+        } else if (relayApi == null && BuildConfig.RELAY_URL.isBlank() && !discoveryClient.enabled) {
+            error = "Relay is not configured. Build with houndRelayUrl and houndPairingToken."
+        }
     }
 
     if (showPairingDialog) {
