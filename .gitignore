@@ -1,0 +1,23 @@
+# Android / Gradle
+**/.gradle/
+**/build/
+**/local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Secrets and local configuration
+.env
+.env.*
+.dev.vars
+*.keystore
+*.jks
+
+# Node
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

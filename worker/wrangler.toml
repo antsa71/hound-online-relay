@@ -1,0 +1,11 @@
+name = "hound-online-relay"
+main = "worker.js"
+compatibility_date = "2026-10-14"
+
+[[durable_objects.bindings]]
+name = "HOUND_RELAY"
+class_name = "HoundRelay"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["HoundRelay"]
