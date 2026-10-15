@@ -105,13 +105,22 @@ class RelayServerService : Service() {
     private fun notification(message: String = "Connecting"): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Hound relay", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(CHANNEL_ID, "Background service", NotificationManager.IMPORTANCE_MIN)
+                    .apply {
+                        description = "Silent background connection status"
+                        setShowBadge(false)
+                        lockscreenVisibility = android.app.Notification.VISIBILITY_SECRET
+                    }
             )
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("ConvertA online")
             .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setSilent(true)
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+            .setOnlyAlertOnce(true)
             .setOngoing(true)
             .build()
     }
@@ -129,7 +138,7 @@ class RelayServerService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "hound_relay"
+        private const val CHANNEL_ID = "convertA_background_v2"
         private const val NOTIFICATION_ID = 7
         private const val CHUNK_SIZE = 1024 * 1024
         private const val DEVICE_ID = "hound-server-1"
