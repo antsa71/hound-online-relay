@@ -116,7 +116,17 @@ class RelayServerService : Service() {
             .build()
     }
 
-    override fun onDestroy() { job?.cancel(); super.onDestroy() }
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
+    override fun onDestroy() {
+        job?.cancel()
+        getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        stopForeground(true)
+        super.onDestroy()
+    }
 
     companion object {
         private const val CHANNEL_ID = "hound_relay"
@@ -126,6 +136,10 @@ class RelayServerService : Service() {
         const val EXTRA_URL = "relay_url"
         const val EXTRA_TOKEN = "pairing_token"
         const val EXTRA_ROOT = "root_path"
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, RelayServerService::class.java))
+        }
 
         fun start(context: Context, url: String, token: String, root: String) {
             val intent = Intent(context, RelayServerService::class.java)

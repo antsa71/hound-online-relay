@@ -52,7 +52,7 @@
         <service
             android:name=".server.RelayServerService"
             android:foregroundServiceType="dataSync"
-            android:stopWithTask="false"
+            android:stopWithTask="true"
             android:exported="false" />
 
     </application>

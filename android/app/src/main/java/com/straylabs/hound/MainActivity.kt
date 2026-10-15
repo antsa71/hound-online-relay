@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.straylabs.hound.server.LocalHttpServer
 import com.straylabs.hound.server.RelayServerService
-import com.straylabs.hound.server.ServerForegroundService
 import com.straylabs.hound.ui.screens.ChatScreen
 import com.straylabs.hound.ui.screens.ChatSession
 import com.straylabs.hound.ui.screens.ClientScreen
@@ -176,11 +175,6 @@ class MainActivity : ComponentActivity() {
                         } else if (!serverRunning) {
                             httpServer?.start(FIXED_SERVER_PORT)
                             serverRunning = true
-                            ServerForegroundService.start(
-                                this@MainActivity,
-                                FIXED_SERVER_PORT,
-                                FIXED_SERVER_ROOT
-                            )
                             if (BuildConfig.RELAY_URL.isNotBlank()) {
                                 RelayServerService.start(
                                     this@MainActivity,
@@ -257,18 +251,11 @@ class MainActivity : ComponentActivity() {
                                         onStartServer = { port ->
                                             httpServer?.start()
                                             serverRunning = true
-                                            ServerForegroundService.start(
-                                                this@MainActivity, port, serverDir?.absolutePath
-                                            )
-                                            serverIp?.let { ip ->
-                                                notificationHelper.showServerRunningNotification(ip, port)
-                                            }
                                         },
                                         onStopServer = {
                                             httpServer?.stop()
                                             serverRunning = false
-                                            ServerForegroundService.stop(this@MainActivity)
-                                            notificationHelper.showServerStoppedNotification()
+                                            RelayServerService.stop(this@MainActivity)
                                             transferHistory.clearCurrentSession()
                                         },
                                         onSelectFolder = { requestFolderPicker(isServer = true) },
@@ -422,8 +409,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         httpServer?.stop()
+        RelayServerService.stop(this)
+        notificationHelper.showServerStoppedNotification()
+        super.onDestroy()
     }
 }
 
